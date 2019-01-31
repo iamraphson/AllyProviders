@@ -1,4 +1,4 @@
-const bitBucket = require('./Bitbucket/provider')
+const bitbucket = require('./Bitbucket/provider')
 
 
-module.exports.bitBucket = bitBucket
+module.exports.bitbucket = bitbucket
