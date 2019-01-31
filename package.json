@@ -1,6 +1,6 @@
 {
   "name": "allyproviders",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Collection of some OAuth/OAuth2 Providers for AdonisJS Ally",
   "main": "src/index.js",
   "scripts": {
