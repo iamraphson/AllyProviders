@@ -1,10 +1,11 @@
 {
   "name": "allyproviders",
   "version": "0.0.0",
-  "description": "Collection of some OAuth2 Providers for AdonisJS Ally",
-  "main": "index.js",
+  "description": "Collection of some OAuth/OAuth2 Providers for AdonisJS Ally",
+  "main": "src/index.js",
   "scripts": {
-    "lint": "standard"
+    "lint": "standard",
+    "test": "node japaConfig.js"
   },
   "repository": {
     "type": "git",
@@ -17,9 +18,10 @@
   },
   "homepage": "https://github.com/iamraphson/AllyProviders#readme",
   "devDependencies": {
-    "standard": "^12.0.1",
     "japa": "^2.0.7",
-    "japa-cli": "^1.0.1"
+    "japa-cli": "^1.0.1",
+    "querystring": "^0.2.0",
+    "standard": "^12.0.1"
   },
   "dependencies": {
     "@adonisjs/ally": "^2.1.2",

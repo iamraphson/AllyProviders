@@ -1,0 +1,15 @@
+{
+  "name": "allyproviders/bitbucket",
+  "version": "1.0.0",
+  "description": "",
+  "main": "provider.js",
+  "author": {
+    "name": "Ayeni Olusegun<nsegun5@gmail.com>"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@adonisjs/ally": "^2.1.2",
+    "got": "^9.6.0",
+    "lodash": "^4.17.11"
+  }
+}
