@@ -1,0 +1,29 @@
+{
+  "name": "allyproviders",
+  "version": "0.0.0",
+  "description": "Collection of some OAuth2 Providers for AdonisJS Ally",
+  "main": "index.js",
+  "scripts": {
+    "lint": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamraphson/AllyProviders.git"
+  },
+  "author": "Ayeni Olusegun",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iamraphson/AllyProviders/issues"
+  },
+  "homepage": "https://github.com/iamraphson/AllyProviders#readme",
+  "devDependencies": {
+    "standard": "^12.0.1",
+    "japa": "^2.0.7",
+    "japa-cli": "^1.0.1"
+  },
+  "dependencies": {
+    "@adonisjs/ally": "^2.1.2",
+    "got": "^9.6.0",
+    "lodash": "^4.17.11"
+  }
+}
