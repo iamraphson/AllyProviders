@@ -1,14 +1,14 @@
-#Adonis Ally Provider
+# Adonis Ally Provider
 
 **A Collection of Providers for Adonis Ally**
 
 
-###Install
+### Install
 
 `npm install --save allyproviders  @adonisjs/ally` or `yarn add allyproviders  @adonisjs/ally`
 
 
-###Usage
+### Usage
 
 - Register the provider
 
@@ -55,7 +55,7 @@ ally: {
 //...
 ```
 
-###Getting Started
+### Getting Started
 
 **Redirect user to 3rd party website**
 ```
@@ -77,24 +77,24 @@ const user = await ally.driver('mydriver').getUser()
 const user = await ally.driver('mydriver').getUserByToken(accessToken, [accessSecret])
 ```
 
-###More Documentation
+### More Documentation
 
 Check out the [official documentation](http://adonisjs.com/docs/social-auth)
 
-###Tests
+### Tests
 Tests are written using [japa](http://github.com/thetutlage/japa). Run the following commands to run tests.
 ```
 npm run test
 ```
 
-###Contributing
+### Contributing
 1. Fork it!
 2. Create your feature branch: `git checkout -b feature-name`
 3. Commit your changes: `git commit -am 'Some commit message'`
 4. Push to the branch: `git push origin feature-name`
 5. Submit a pull request 😉😉
 
-###How can I thank you?
+### How can I thank you?
 
 Why not star the github repo? I'd love the attention! Why not share the link for this repository on Twitter or Any Social Media? Spread the word!
 
@@ -103,5 +103,5 @@ Don't forget to [follow me on twitter](https://twitter.com/iamraphson)!
 Thanks!
 Ayeni Olusegun.
 
-###License
+### License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
