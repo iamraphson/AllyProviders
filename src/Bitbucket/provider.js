@@ -1,11 +1,14 @@
+'use strict'
+
 /*
- * Adonis Ally Provider - Bitbucket
+ * adonis-ally
  *
  * (c) Ayeni Olusegun <nsegun5@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 const got = require('got')
 
 const CE = require('@adonisjs/ally/src/Exceptions')
@@ -14,6 +17,12 @@ const AllyUser = require('@adonisjs/ally/src/AllyUser')
 const utils = require('@adonisjs/ally/lib/utils')
 const _ = require('lodash')
 
+/**
+ * Bitbucket driver to authenticating users via OAuth2Scheme.
+ *
+ * @class Bitbucket
+ * @constructor
+ */
 class Bitbucket extends OAuth2Scheme {
   constructor (Config) {
     const config = Config.get('services.ally.bitbucket')
@@ -27,9 +36,10 @@ class Bitbucket extends OAuth2Scheme {
      * Oauth specific values to be used when creating the redirect
      * url or fetching user profile.
      */
-    this._scope = this._getInitialScopes(config.scope)
     this._redirectUri = config.redirectUri
     this._redirectUriOptions = _.merge({ response_type: 'code' }, config.options)
+
+    this.scope = _.size(config.scope) ? config.scope : ['account', 'email']
   }
 
   /**
@@ -47,17 +57,29 @@ class Bitbucket extends OAuth2Scheme {
    * Scope seperator for seperating multiple
    * scopes.
    *
-   *  @attribute scopeSeperator
+   * @attribute scopeSeperator
    *
-   *  @return {String}
+   * @return {String}
    */
   get scopeSeperator () {
     return ' '
   }
 
   /**
+   * Returns a boolean telling if driver supports
+   * state
+   *
+   * @method supportStates
+   *
+   * @return {Boolean}
+   */
+  get supportStates () {
+    return true
+  }
+
+  /**
    * Base url to be used for constructing
-   * bitbucket oauth urls.
+   * Bitbucket oauth urls.
    *
    * @attribute baseUrl
    *
@@ -92,23 +114,6 @@ class Bitbucket extends OAuth2Scheme {
   }
 
   /**
-   * Returns initial scopes to be used right from the
-   * config file. Otherwise it will fallback to the
-   * commonly used scopes.
-   *
-   * @method _getInitialScopes
-   *
-   * @param   {Array} scopes
-   *
-   * @return  {Array}
-   *
-   * @private
-   */
-  _getInitialScopes (scopes) {
-    return _.size(scopes) ? scopes : ['account', 'email']
-  }
-
-  /**
    * Returns the user profile as an object using the
    * access token.
    *
@@ -123,9 +128,10 @@ class Bitbucket extends OAuth2Scheme {
    */
   async _getUserProfile (accessToken) {
     const profileUrl = `${this.baseUrl}api/2.0/user?access_token=${accessToken}`
+
     const response = await got(profileUrl, {
       headers: {
-        Accept: 'application/json'
+        'Accept': 'application/json'
       },
       json: true
     })
@@ -156,22 +162,51 @@ class Bitbucket extends OAuth2Scheme {
   }
 
   /**
-   * Returns the redirect url for a given provider.
+   * Normalize the user profile response and build an Ally user.
    *
-   * @method getRedirectUrl
-   * @async
+   * @param {object} userProfile
+   * @param {object} accessTokenResponse
    *
-   * @param  {Array} scope
+   * @return {object}
    *
-   * @return {String}
+   * @private
    */
-  async getRedirectUrl (scope) {
-    scope = _.size(scope) ? scope : this._scope
-    return this.getUrl(this._redirectUri, scope, this._redirectUriOptions)
+  _buildAllyUser (userProfile, accessTokenResponse) {
+    const user = new AllyUser()
+    user.setOriginal(userProfile)
+    .setFields(
+      userProfile.uuid,
+      userProfile.display_name,
+      userProfile.emails[0].value,
+      userProfile.username,
+      userProfile.links.avatar.href
+    )
+    .setToken(
+      accessTokenResponse.accessToken,
+      accessTokenResponse.refreshToken,
+      null,
+      Number(_.get(accessTokenResponse, 'result.expires_in'))
+    )
+
+    return user
   }
 
   /**
-   * Parses the redirect errors returned by Bit-Bucket
+   * Returns the redirect url for a given provider.
+   *
+   * @method getRedirectUrl
+   *
+   * @param {String} [state]
+   *
+   * @return {String}
+   */
+  async getRedirectUrl (state) {
+    const options = state ? Object.assign(this._redirectUriOptions, { state }) : this._redirectUriOptions
+    return this.getUrl(this._redirectUri, this.scope, options)
+  }
+
+  /**
+   * Parses the redirect errors returned by Bit-bucket
    * and returns the error message.
    *
    * @method parseRedirectError
@@ -184,18 +219,35 @@ class Bitbucket extends OAuth2Scheme {
     return queryParams.error_description || queryParams.error || 'Oauth failed during redirect'
   }
 
+  async _getUserDetail (accessToken) {
+    const [userProfile, userEmail] = await Promise.all([
+      this._getUserProfile(accessToken),
+      this._getUserEmail(accessToken)
+    ])
+
+    userProfile.emails = userEmail.values.map(email => ({
+      value: email.email,
+      primary: email.is_primary,
+      verified: email.is_confirmed
+    }))
+
+    return userProfile
+  }
+
   /**
    * Returns the user profile with it's access token, refresh token
-   * and token expiry
+   * and token expiry.
    *
    * @method getUser
    *
    * @param {Object} queryParams
+   * @param {String} [originalState]
    *
    * @return {Object}
    */
-  async getUser (queryParams) {
+  async getUser (queryParams, originalState) {
     const code = queryParams.code
+    const state = queryParams.state
 
     /**
      * Throw an exception when query string does not have
@@ -206,21 +258,30 @@ class Bitbucket extends OAuth2Scheme {
       throw CE.OAuthException.tokenExchangeException(errorMessage, null, errorMessage)
     }
 
+    /**
+     * Valid state with original state
+     */
+    if (state && originalState !== state) {
+      throw CE.OAuthException.invalidState()
+    }
+
     const accessTokenResponse = await this.getAccessToken(code, this._redirectUri, {
       grant_type: 'authorization_code'
     })
-    const userProfile = await this._getUserProfile(accessTokenResponse.accessToken)
-    const userEmail = await this._getUserEmail(accessTokenResponse.accessToken)
-    userProfile.emails = []
-    userEmail.values.forEach((email) => {
-      userProfile.emails.push({ value: email.email, primary: email.is_primary, verified: email.is_confirmed })
-  })
-    const user = new AllyUser()
-    user.setOriginal(userProfile)
-    .setFields(userProfile.uuid, userProfile.display_name, userProfile.emails[0].value, userProfile.username, userProfile.links.avatar.href)
-    .setToken(accessTokenResponse.accessToken, accessTokenResponse.refreshToken, null, Number(_.get(accessTokenResponse, 'result.expires_in')))
 
-    return user
+    const userProfile = await this._getUserDetail(accessTokenResponse.accessToken)
+
+    return this._buildAllyUser(userProfile, accessTokenResponse)
+  }
+
+  /**
+   *
+   * @param {string} accessToken
+   */
+  async getUserByToken (accessToken) {
+    const userProfile = await this._getUserDetail(accessToken)
+
+    return this._buildAllyUser(userProfile, { accessToken, refreshToken: null })
   }
 }
 
